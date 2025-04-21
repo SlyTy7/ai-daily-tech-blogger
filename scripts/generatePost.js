@@ -1,43 +1,49 @@
-const { Configuration, OpenAIApi } = require("openai");
-const admin = require("firebase-admin");
+import { config } from "dotenv";
+import OpenAI from "openai";
+import admin from "firebase-admin";
 
-require("dotenv").config();
+config(); // Load .env variables
 
+// Init OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Parse service account JSON string from .env
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }));
 
+// Init Firebase
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
 const db = admin.firestore();
 
+// Different tones/styles for variation
 const styles = [
   "Use a humorous tone.",
+  "Write it like a daily newsletter.",
+  "Make it sound like a conversation with a junior developer.",
   "Focus on developer tools and trends.",
-  "Focus on new frameworks or updates to existing frameworks.",
   "Include one fun fact or stat if possible.",
 ];
 
+// Build prompt with current date and a style
 function getPrompt() {
-    // gets todays date to keep news fresh
   const date = new Date().toISOString().split("T")[0];
-  // randomly selects a style
   const style = styles[Math.floor(Math.random() * styles.length)];
-
-  // prompt to chatgpt to generate blog post.
-  return `Write a 400-word blog post summarizing the most popular tech news and trends about the software development industry on ${date}. Make it about news that happened that date. This will be for a daily blog, and I want to prevent repeated responses and keep the news fresh. Also, make sure that the copy is SEO friendly. ${style}`;
+  return `Write a 400-word blog post summarizing the most important tech news for developers on ${date}. ${style}`;
 }
 
 async function generateAndStorePost() {
   const prompt = getPrompt();
 
-  const res = await openai.createChatCompletion({
+  const response = await openai.chat.completions.create({
     model: "gpt-4-turbo",
     messages: [{ role: "user", content: prompt }],
   });
 
-  const content = res.data.choices[0].message.content.trim();
+  const content = response.choices[0].message.content.trim();
   const date = new Date().toISOString().split("T")[0];
 
   await db.collection("posts").doc(date).set({
