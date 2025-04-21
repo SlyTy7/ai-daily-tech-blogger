@@ -10,7 +10,8 @@ const openai = new OpenAI({
 });
 
 // Parse service account JSON string from .env
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64, "base64").toString("utf-8");
+const serviceAccount = JSON.parse(decoded);
 
 // Init Firebase
 admin.initializeApp({
@@ -22,9 +23,8 @@ const db = admin.firestore();
 // Different tones/styles for variation
 const styles = [
   "Use a humorous tone.",
-  "Write it like a daily newsletter.",
-  "Make it sound like a conversation with a junior developer.",
   "Focus on developer tools and trends.",
+  "Focus on new or recently updated frameworks.",
   "Include one fun fact or stat if possible.",
 ];
 
@@ -32,19 +32,21 @@ const styles = [
 function getPrompt() {
   const date = new Date().toISOString().split("T")[0];
   const style = styles[Math.floor(Math.random() * styles.length)];
-  return `Write a 400-word blog post summarizing the most important tech news for developers on ${date}. ${style}`;
+  return `Write a 400-word blog post summarizing the most important tech news and trends for frontend software developers on ${date}. Make it about news that happened that date. This will be for a daily blog, and I want to prevent repeated responses and to keep the news fresh. Make sure that the copy is also SEO friendly. ${style}`;
 }
 
 async function generateAndStorePost() {
   const prompt = getPrompt();
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4-turbo",
+    model: "gpt-3.5-turbo",
     messages: [{ role: "user", content: prompt }],
   });
 
   const content = response.choices[0].message.content.trim();
   const date = new Date().toISOString().split("T")[0];
+
+  console.log(content)
 
   await db.collection("posts").doc(date).set({
     date,
