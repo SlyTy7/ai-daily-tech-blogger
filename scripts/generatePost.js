@@ -45,8 +45,6 @@ async function generateAndStorePost() {
   const content = response.choices[0].message.content.trim();
   const date = new Date().toISOString().split("T")[0];
 
-  console.log(content)
-
   await db.collection("posts").doc(date).set({
     date,
     content,
