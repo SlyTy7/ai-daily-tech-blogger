@@ -24,7 +24,6 @@ const db = admin.firestore();
 const styles = [
   "Use a humorous tone.",
   "Focus on developer tools and trends.",
-  "Focus on new or recently updated frameworks.",
   "Include one fun fact or stat if possible.",
 ];
 
