@@ -1,5 +1,7 @@
 {
-  "name": "ai-daily-blog",
+  "name": "ai-daily-tech-blogger",
+  "version": "1.0.0",
+  "type": "module",  
   "scripts": {
     "generate": "node scripts/generatePost.js"
   },
