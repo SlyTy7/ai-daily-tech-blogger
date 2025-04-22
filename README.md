@@ -1,3 +1,4 @@
+<!-- portfolio-meta display_name: AI Daily Tech Blogger -->
 # AI Daily Tech Blogger 🧠📰
 
 Automatically generates a daily developer-focused tech blog post using OpenAI and uploads it to Firebase Firestore.
