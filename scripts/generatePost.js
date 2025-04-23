@@ -20,18 +20,25 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-// Different tones/styles for variation
-const styles = [
-  "Use a humorous tone.",
-  "Focus on developer tools and trends.",
-  "Include one fun fact or stat if possible.",
-];
+// Map days of week to specific themes
+const dailyThemes = {
+  Sunday: "Write a thoughtful post about developer mindset, career growth, or productivity. Include a personal-sounding tone and end with a reflection or takeaway.",
+  Monday: "Summarize emerging frontend development trends or predictions. Include analysis and mention any relevant tools or frameworks gaining attention.",
+  Tuesday: "Summarize the most important frontend or JavaScript-related news from the past 7 days. Include short commentary on why it matters.",
+  Wednesday: "Share essential tips or 'things every frontend developer should know.' This could include browser quirks, performance tips, or new APIs.",
+  Thursday: "Spotlight a useful developer tool, library, or framework. Explain what it does, why it’s useful, and how developers can try it out.",
+  Friday: "Write an opinionated deep dive or analysis on a hot topic in frontend (like SSR vs CSR, TypeScript pros/cons, or controversial design trends).",
+  Saturday: "Highlight a cool side project, experimental GitHub repo, or small dev experiment. Make it fun, casual, and inspiring.",
+};
 
-// Build prompt with current date and a style
-function getPrompt() {
-  const date = new Date().toISOString().split("T")[0];
-  const prompt = styles[Math.floor(Math.random() * styles.length)];
-  return `Write a 400-word blog post summarizing the most important tech news and trends for frontend software developers on ${date}. Make it about news that happened that date. This will be for a daily blog, and I want to prevent repeated responses and to keep the news fresh. Make sure that the copy is also SEO friendly. ${prompt}`;
+// Build prompt based on current weekday
+const getPrompt = () => {
+  const today = new Date();
+  const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
+  const dateStr = today.toISOString().split("T")[0];
+  const theme = dailyThemes[weekday];
+
+  return `Today is ${weekday}, ${dateStr}. ${theme} Write about 400 words, and keep the tone natural and engaging.`;
 }
 
 async function generateAndStorePost() {
@@ -52,10 +59,10 @@ async function generateAndStorePost() {
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  console.log(`✅ Blog post saved for ${date}`);
+  console.log(`Blog post saved for ${date} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })})`);
 }
 
 generateAndStorePost().catch((err) => {
-  console.error("❌ Error generating or saving post:", err);
+  console.error("Error generating or saving post:", err);
   process.exit(1);
 });
