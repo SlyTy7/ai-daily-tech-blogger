@@ -30,8 +30,8 @@ const styles = [
 // Build prompt with current date and a style
 function getPrompt() {
   const date = new Date().toISOString().split("T")[0];
-  const style = styles[Math.floor(Math.random() * styles.length)];
-  return `Write a 400-word blog post summarizing the most important tech news and trends for frontend software developers on ${date}. Make it about news that happened that date. This will be for a daily blog, and I want to prevent repeated responses and to keep the news fresh. Make sure that the copy is also SEO friendly. ${style}`;
+  const prompt = styles[Math.floor(Math.random() * styles.length)];
+  return `Write a 400-word blog post summarizing the most important tech news and trends for frontend software developers on ${date}. Make it about news that happened that date. This will be for a daily blog, and I want to prevent repeated responses and to keep the news fresh. Make sure that the copy is also SEO friendly. ${prompt}`;
 }
 
 async function generateAndStorePost() {
