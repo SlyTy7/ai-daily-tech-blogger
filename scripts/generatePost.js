@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import axios from 'axios';
 import OpenAI from "openai";
 import admin from "firebase-admin";
 
