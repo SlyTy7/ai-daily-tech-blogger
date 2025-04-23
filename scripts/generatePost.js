@@ -3,7 +3,8 @@ import axios from "axios";
 import OpenAI from "openai";
 import admin from "firebase-admin";
 
-config(); // Load .env variables
+// Load .env variables
+config(); 
 
 // Initialize OpenAI API
 const openai = new OpenAI({
@@ -101,7 +102,7 @@ const generateAndStorePost = async (posts) => {
 			createdAt: admin.firestore.FieldValue.serverTimestamp(),
 		});
 
-		console.log(`✅ Blog post saved for ${date}`);
+		console.log(`Blog post saved for ${date}`);
 	} catch (error) {
 		console.error("Error generating or saving post:", error);
 	}
