@@ -1,4 +1,6 @@
 import { config } from "dotenv";
+import { marked } from "marked";
+
 import axios from "axios";
 import OpenAI from "openai";
 import admin from "firebase-admin";
@@ -91,22 +93,24 @@ const generateAndStorePost = async (posts) => {
 
 	// Construct prompt for OpenAI GPT
 	const headlines = posts.map((post) => post.title).join("\n");
-	const prompt = `Here are the top frontend-related headlines from Hacker News today:\n\n${headlines}\n\nSummarize the key trends in frontend development based on these headlines. Write a 400-word blog post about these trends, keeping the tone natural and engaging.`;
+	const prompt = `Here are the top frontend-related headlines from Hacker News today:\n\n${headlines}\n\nSummarize the key trends in frontend development based on these headlines. Write a 400-word blog post about these trends, keeping the tone natural and engaging. Format it like an article using markdown with headings and subheadings.`;
 
 	try {
-		// Generate the post
+		// Generate the post in Markdown format
 		const response = await openai.chat.completions.create({
 			model: "gpt-4-turbo",
 			messages: [{ role: "user", content: prompt }],
 		});
 
-		const content = response.choices[0].message.content.trim();
+		const markdown = response.choices[0].message.content.trim();
+		const html = marked.parse(markdown);
 
-		// Save the blog post to Firebase
+		// Save both Markdown and HTML to Firebase
 		await db.collection("posts").doc(date).set({
 			date,
-			content,
 			headlines,
+			markdown,
+			html,
 			createdAt: admin.firestore.FieldValue.serverTimestamp(),
 		});
 
