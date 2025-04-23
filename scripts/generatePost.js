@@ -49,14 +49,25 @@ const fetchHackerNewsPosts = async () => {
 			})
 		);
 
-		// Filter posts by keywords like 'React', 'JavaScript', 'Web Dev'
-		const frontendPosts = postDetails.filter(
-			(post) =>
-				post.title &&
-				(post.title.toLowerCase().includes("react") ||
-					post.title.toLowerCase().includes("javascript") ||
-					post.title.toLowerCase().includes("web dev"))
-		);
+		// Keywords used in search
+		const keywords = [
+			"react",
+			"javascript",
+			"web dev",
+			"vite",
+      "next.js",
+			"typescript",
+			"frontend",
+			"tailwind",
+		];
+
+		// Filter posts by keyword array
+		const frontendPosts = postDetails.filter((post) => {
+			if (!post.title) return false;
+
+			const title = post.title.toLowerCase();
+			return keywords.some((keyword) => title.includes(keyword));
+		});
 
 		return frontendPosts;
 	} catch (error) {
