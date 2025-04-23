@@ -38,7 +38,7 @@ const fetchHackerNewsPosts = async () => {
 		const response = await axios.get(
 			"https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty"
 		);
-		const topPostIds = response.data.slice(0, 10); // Get top 10 posts
+		const topPostIds = response.data.slice(0, 60); // Get top 60 posts
 
 		// Fetch details of the top 10 posts
 		const postDetails = await Promise.all(
@@ -56,6 +56,8 @@ const fetchHackerNewsPosts = async () => {
 			"javascript",
 			"web dev",
 			"vite",
+      "css",
+      "html",
       "next.js",
 			"typescript",
 			"frontend",
