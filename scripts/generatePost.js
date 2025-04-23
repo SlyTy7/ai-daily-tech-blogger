@@ -2,6 +2,8 @@ import { config } from "dotenv";
 import axios from "axios";
 import OpenAI from "openai";
 import admin from "firebase-admin";
+import https from 'https';
+
 
 // Load .env variables
 config(); 
@@ -35,8 +37,11 @@ const getTodayDate = () => {
 // Fetch top posts from Hacker News
 const fetchHackerNewsPosts = async () => {
 	try {
+    const httpsAgent = new https.Agent({ keepAlive: true });
+
 		const response = await axios.get(
-			"https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty"
+			"https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty",
+      { httpsAgent }
 		);
 		const topPostIds = response.data.slice(0, 60); // Get top 60 posts
 
@@ -44,7 +49,8 @@ const fetchHackerNewsPosts = async () => {
 		const postDetails = await Promise.all(
 			topPostIds.map(async (id) => {
 				const postResponse = await axios.get(
-					`https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`
+					`https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`,
+          { httpsAgent }
 				);
 				return postResponse.data;
 			})
