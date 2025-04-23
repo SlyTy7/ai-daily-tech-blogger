@@ -17,8 +17,15 @@ const serviceAccount = JSON.parse(decoded);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-
 const db = admin.firestore();
+
+// get current date
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, "0");
+const day = String(today.getDate()).padStart(2, "0");
+const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
+const date = `${year}-${month}-${day}`;
 
 // Map days of week to specific themes
 const dailyThemes = {
@@ -33,12 +40,9 @@ const dailyThemes = {
 
 // Build prompt based on current weekday
 const getPrompt = () => {
-  const today = new Date();
-  const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
-  const dateStr = today.toISOString().split("T")[0];
   const theme = dailyThemes[weekday];
 
-  return `Today is ${weekday}, ${dateStr}. ${theme} Write about 400 words, and keep the tone natural and engaging.`;
+  return `Today is ${weekday}, ${date}. ${theme} Write about 400 words, and keep the tone natural and engaging.`;
 }
 
 async function generateAndStorePost() {
@@ -50,7 +54,7 @@ async function generateAndStorePost() {
   });
 
   const content = response.choices[0].message.content.trim();
-  const date = new Date().toISOString().split("T")[0];
+
 
   await db.collection("posts").doc(date).set({
     date,
@@ -59,7 +63,7 @@ async function generateAndStorePost() {
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  console.log(`Blog post saved for ${date} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })})`);
+  console.log(`Blog post saved for ${date} (${weekday})`);
 }
 
 generateAndStorePost().catch((err) => {
