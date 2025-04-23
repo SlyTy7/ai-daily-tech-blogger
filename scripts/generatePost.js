@@ -1,73 +1,113 @@
 import { config } from "dotenv";
-import axios from 'axios';
+import axios from "axios";
 import OpenAI from "openai";
 import admin from "firebase-admin";
 
 config(); // Load .env variables
 
-// Init OpenAI
+// Initialize OpenAI API
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+	apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Parse service account JSON string from .env
-const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64, "base64").toString("utf-8");
+// Firebase initialization
+const decoded = Buffer.from(
+	process.env.FIREBASE_SERVICE_ACCOUNT_B64,
+	"base64"
+).toString("utf-8");
 const serviceAccount = JSON.parse(decoded);
-
-// Init Firebase
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+	credential: admin.credential.cert(serviceAccount),
 });
 const db = admin.firestore();
 
-// get current date
-const today = new Date();
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, "0");
-const day = String(today.getDate()).padStart(2, "0");
-const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
-const date = `${year}-${month}-${day}`;
+// Helper function to get today's date
+const getTodayDate = () => {
+	const today = new Date();
+	const year = today.getFullYear();
+	const month = String(today.getMonth() + 1).padStart(2, "0");
+	const day = String(today.getDate()).padStart(2, "0");
 
-// Map days of week to specific themes
-const dailyThemes = {
-  Sunday: "Write a thoughtful post about developer mindset, career growth, or productivity. Include a personal-sounding tone and end with a reflection or takeaway.",
-  Monday: "Summarize emerging frontend development trends or predictions. Include analysis and mention any relevant tools or frameworks gaining attention.",
-  Tuesday: "Summarize the most important frontend or JavaScript-related news from the past 7 days. Include short commentary on why it matters.",
-  Wednesday: "Share essential tips or 'things every frontend developer should know.' This could include browser quirks, performance tips, or new APIs.",
-  Thursday: "Spotlight a useful developer tool, library, or framework. Explain what it does, why it’s useful, and how developers can try it out.",
-  Friday: "Write an opinionated deep dive or analysis on a hot topic in frontend (like SSR vs CSR, TypeScript pros/cons, or controversial design trends).",
-  Saturday: "Highlight a cool side project, experimental GitHub repo, or small dev experiment. Make it fun, casual, and inspiring.",
+	return `${year}-${month}-${day}`;
 };
 
-// Build prompt based on current weekday
-const getPrompt = () => {
-  const theme = dailyThemes[weekday];
+// Fetch top posts from Hacker News
+const fetchHackerNewsPosts = async () => {
+	try {
+		const response = await axios.get(
+			"https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty"
+		);
+		const topPostIds = response.data.slice(0, 10); // Get top 10 posts
 
-  return `Today is ${weekday}, ${date}. ${theme} Write about 400 words, and keep the tone natural and engaging.`;
-}
+		// Fetch details of the top 10 posts
+		const postDetails = await Promise.all(
+			topPostIds.map(async (id) => {
+				const postResponse = await axios.get(
+					`https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`
+				);
+				return postResponse.data;
+			})
+		);
 
-async function generateAndStorePost() {
-  const prompt = getPrompt();
+		// Filter posts by keywords like 'React', 'JavaScript', 'Web Dev'
+		const frontendPosts = postDetails.filter(
+			(post) =>
+				post.title &&
+				(post.title.toLowerCase().includes("react") ||
+					post.title.toLowerCase().includes("javascript") ||
+					post.title.toLowerCase().includes("web dev"))
+		);
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4-turbo",
-    messages: [{ role: "user", content: prompt }],
-  });
+		return frontendPosts;
+	} catch (error) {
+		console.error("Error fetching Hacker News posts:", error);
+		throw error;
+	}
+};
 
-  const content = response.choices[0].message.content.trim();
+// Generate blog post from Hacker News data
+const generateAndStorePost = async (posts) => {
+	const date = getTodayDate();
 
+	// Construct prompt for OpenAI GPT
+	const headlines = posts.map((post) => post.title).join("\n");
+	const prompt = `Here are the top frontend-related headlines from Hacker News today:\n\n${headlines}\n\nSummarize the key trends in frontend development based on these headlines. Write a 400-word blog post about these trends, keeping the tone natural and engaging.`;
 
-  await db.collection("posts").doc(date).set({
-    date,
-    content,
-    prompt,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+	try {
+		// Generate the post
+		const response = await openai.chat.completions.create({
+			model: "gpt-4-turbo",
+			messages: [{ role: "user", content: prompt }],
+		});
 
-  console.log(`Blog post saved for ${date} (${weekday})`);
-}
+		const content = response.choices[0].message.content.trim();
 
-generateAndStorePost().catch((err) => {
-  console.error("Error generating or saving post:", err);
-  process.exit(1);
-});
+		// Save the blog post to Firebase
+		await db.collection("posts").doc(date).set({
+			date,
+			content,
+			headlines,
+			createdAt: admin.firestore.FieldValue.serverTimestamp(),
+		});
+
+		console.log(`✅ Blog post saved for ${date}`);
+	} catch (error) {
+		console.error("Error generating or saving post:", error);
+	}
+};
+
+// Main function to fetch posts, generate, and save
+const main = async () => {
+	try {
+		const posts = await fetchHackerNewsPosts();
+		if (posts.length > 0) {
+			await generateAndStorePost(posts);
+		} else {
+			console.log("No relevant frontend posts found for today.");
+		}
+	} catch (error) {
+		console.error("Error in process:", error);
+	}
+};
+
+main();
