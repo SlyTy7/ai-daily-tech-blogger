@@ -4,11 +4,10 @@ import { marked } from "marked";
 import axios from "axios";
 import OpenAI from "openai";
 import admin from "firebase-admin";
-import https from 'https';
-
+import https from "https";
 
 // Load .env variables
-config(); 
+config();
 
 // Initialize OpenAI API
 const openai = new OpenAI({
@@ -39,11 +38,11 @@ const getTodayDate = () => {
 // Fetch top posts from Hacker News
 const fetchHackerNewsPosts = async () => {
 	try {
-    const httpsAgent = new https.Agent({ keepAlive: true });
+		const httpsAgent = new https.Agent({ keepAlive: true });
 
 		const response = await axios.get(
 			"https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty",
-      { httpsAgent }
+			{ httpsAgent }
 		);
 		const topPostIds = response.data.slice(0, 60); // Get top 60 posts
 
@@ -52,7 +51,7 @@ const fetchHackerNewsPosts = async () => {
 			topPostIds.map(async (id) => {
 				const postResponse = await axios.get(
 					`https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`,
-          { httpsAgent }
+					{ httpsAgent }
 				);
 				return postResponse.data;
 			})
@@ -64,9 +63,9 @@ const fetchHackerNewsPosts = async () => {
 			"javascript",
 			"web dev",
 			"vite",
-      "css",
-      "html",
-      "next.js",
+			"css",
+			"html",
+			"next.js",
 			"typescript",
 			"frontend",
 			"tailwind",
