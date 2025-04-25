@@ -38,30 +38,14 @@ const getTodayDate = () => {
 // Fetch top posts from Hacker News
 const fetchHackerNewsPosts = async () => {
 	try {
-		const httpsAgent = new https.Agent({ keepAlive: true });
-
-		const response = await axios.get(
-			"https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty",
-			{ httpsAgent }
-		);
-		const topPostIds = response.data.slice(0, 60); // Get top 60 posts
-
-		// Fetch details of the top 10 posts
-		const postDetails = await Promise.all(
-			topPostIds.map(async (id) => {
-				const postResponse = await axios.get(
-					`https://hacker-news.firebaseio.com/v0/item/${id}.json?print=pretty`,
-					{ httpsAgent }
-				);
-				return postResponse.data;
-			})
-		);
-
-		// Keywords used in search
 		const keywords = [
 			"react",
 			"javascript",
-			"web dev",
+			"web",
+			"developer",
+			"development",
+			"code",
+			"programming",
 			"vite",
 			"css",
 			"html",
@@ -69,12 +53,31 @@ const fetchHackerNewsPosts = async () => {
 			"typescript",
 			"frontend",
 			"tailwind",
+			"bot",
+			"crypto",
 		];
 
-		// Filter posts by keyword array
-		const frontendPosts = postDetails.filter((post) => {
-			if (!post.title) return false;
+		const todayTimestamp = Math.floor(Date.now() / 1000);
 
+		const query = "frontend javascript react web";
+
+		const response = await axios.get(
+			"https://hn.algolia.com/api/v1/search_by_date",
+			{
+				params: {
+					query,
+					tags: "story",
+					numericFilters: `created_at_i>${todayTimestamp}`,
+					hitsPerPage: 100,
+				},
+			}
+		);
+
+		const posts = response.data.hits;
+
+		// Filter client-side
+		const frontendPosts = posts.filter((post) => {
+			if (!post.title) return false;
 			const title = post.title.toLowerCase();
 			return keywords.some((keyword) => title.includes(keyword));
 		});
@@ -123,6 +126,7 @@ const generateAndStorePost = async (posts) => {
 const main = async () => {
 	try {
 		const posts = await fetchHackerNewsPosts();
+
 		if (posts.length > 0) {
 			await generateAndStorePost(posts);
 		} else {
